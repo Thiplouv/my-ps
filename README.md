@@ -1,5 +1,5 @@
 # My-PS Project
-> Welcome to the my-ps project ! The goal of this project is to dig into Linux concepts by rewriting as much functions as possible of the popular UNIX command line tool ps.
+> Welcome to the my-ps project ! The goal of this project is to dig into Linux concepts by rewriting as many functions as possible of the popular UNIX command line tool ps.
 
 The ps tool report a snapshot of the current processes. 
 
