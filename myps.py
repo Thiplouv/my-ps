@@ -10,8 +10,8 @@ try :
         args = args.split(",")
 
         for word in args :
-            if "PID" in word or "PPID" in word or "CMD" in word :
-                print("{:>10} ".format(word))
+            if word == "PID" or word == "PPID" or word == "CMD" :
+                print("{:>5} ".format(word))
             else :
                 print("This program only supports \"PID\", \"PPID\" and \"CMD\" arguments for the moment")
 
