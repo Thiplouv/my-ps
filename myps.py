@@ -5,19 +5,16 @@ import sys
 args = str(sys.argv[2]).upper()
 args = args.split(",")
 
-def generate_template(column_names):
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return 0
+def generate_template(column_name):
+    settings = [
+        ["PID", "{:>5}"],
+        ["PPID", "{:>5}"],
+        ["CMD", "{:<27}"]
+    ]
+
+    for i in range(len(settings)) :
+        if settings[i][0] == column_name :
+            return(settings[i][1])
     
     #str = ""
     #if "PID" in column_names :
@@ -41,13 +38,19 @@ try :
         if "PID" not in args and "PPID" not in args and "CMD" not in args :
             print("This program only supports \"PID\", \"PPID\" and \"CMD\" arguments for the moment")
         else :
-            template = generate_template(args)
-            tbl = ""
             for word in args :
-                tbl += word
-                if word != args[len(args)-1] :
-                    tbl += " "
-            print(template.format(*args, end=" "))
+                template = generate_template(word)
+                print(template.format(word), end = " ")
+            #for i in range(len(args)) :
+            #    print(template.format(args[i], end = " "))
+            
+            #template = generate_template(args)
+            #tbl = ""
+            #for word in args :
+            #    tbl += word
+            #    if word != args[len(args)-1] :
+            #        tbl += " "
+            #print(template.format(*args, end=" "))
         
         #for word in args :
             #if word == "PID" or word == "PPID" or word == "CMD" :
