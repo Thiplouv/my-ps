@@ -21,7 +21,8 @@ try :
         print("{:>5} {:<8} {:>8} {:<27}".format("PID","TTY","TIME","CMD"))
     if "-o" in sys.argv :
         if "PID" not in args and "PPID" not in args and "CMD" not in args :
-            print("This program only supports \"PID\", \"PPID\" and \"CMD\" arguments for the moment")
+            print("ps: {:s}: keyword not found".format(sys.argv[2]))
+            print("ps: no valid keywords; valid keywords:\npid ppid cmd")
         else :
             for word in args :
                 template = generate_template(word)
