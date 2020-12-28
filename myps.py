@@ -5,13 +5,13 @@ import sys
 args = str(sys.argv[2]).upper()
 args = args.split(",")
 
-def generate_template(column_name):
-    settings = [
-        ["PID", "{:>5}"],
-        ["PPID", "{:>5}"],
-        ["CMD", "{:<27}"]
-    ]
+settings = [
+    ["PID", "{:>5}"],
+    ["PPID", "{:>5}"],
+    ["CMD", "{:<27}"]
+]
 
+def generate_template(column_name):
     for i in range(len(settings)) :
         if settings[i][0] == column_name :
             return(settings[i][1])
