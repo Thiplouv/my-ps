@@ -9,6 +9,7 @@ settings = [
     ["PID", "{:>5}"],
     ["PPID", "{:>5}"],
     ["CMD", "{:<27}"],
+    ["COMMAND", "{:<27}"],
     ["TTY", "{:<8}"],
     ["TIME", "{:>8}"]
 ]
@@ -22,9 +23,9 @@ try :
     if len(sys.argv) <= 2 :
         print("{:>5} {:<8} {:>8} {:<27}".format("PID","TTY","TIME","CMD"))
     if "-o" in sys.argv :
-        if "PID" not in args and "PPID" not in args and "CMD" not in args and "TTY" not in args and "TIME" not in args :
+        if "PID" not in args and "PPID" not in args and "CMD" not in args and "COMMAND" not in args and "TTY" not in args and "TIME" not in args :
             print("ps: {:s}: keyword not found".format(sys.argv[2]))
-            print("ps: no valid keywords; valid keywords:\npid ppid cmd tty time")
+            print("ps: no valid keywords; valid keywords:\npid ppid cmd command tty time")
         else :
             for word in args :
                 template = generate_template(word)
