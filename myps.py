@@ -40,6 +40,15 @@ try :
     if len(sys.argv) <= 2 :
         print("{:>5} {:<8} {:>8} {:<27}".format("PID","TTY","TIME","CMD"))
 
+    # List_PID option
+    if "-p" in sys.argv :
+        # Get -p arguments
+        args = get_args("-p")
+        if args[0].isdigit() is True :
+            print("\n{:>5}".format(args[0]))
+        else :
+            print("error: process ID list syntax error")
+
     # Format option
     if "-o" in sys.argv :
         # Get -o arguments
@@ -53,15 +62,6 @@ try :
             for word in args :
                 template = generate_template(word)
                 print(template.format(word), end = " ")
-
-    # List_PID option
-    if "-p" in sys.argv :
-        # Get -p arguments
-        args = get_args("-p")
-        if args.isdigit() is True :
-            print("\n{:>5}".format(args[0]))
-        else :
-            print("error: process ID list syntax error")
 
 # Print error message if command not used properly
 except ValueError :
