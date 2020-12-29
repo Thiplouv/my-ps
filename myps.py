@@ -27,16 +27,20 @@ def verif_keywords(keywords) :
             badkwd.append(word)
     return badkwd
 
+def get_args(option) :
+        pos = sys.argv.index(option)
+        args = str(sys.argv[pos + 1]).upper()
+        args = args.split(",")
+        return args
+
 try :
     # Default printing if no argments were given
     if len(sys.argv) <= 2 :
         print("{:>5} {:<8} {:>8} {:<27}".format("PID","TTY","TIME","CMD"))
     # Formatting option
     if "-o" in sys.argv :
-        # Get -o arguments position and split ',' 
-        pos = sys.argv.index("-o")
-        args = str(sys.argv[pos + 1]).upper()
-        args = args.split(",")
+        # Get -o arguments
+        args = get_args("-o")
         verif = verif_keywords(args)
         if len(verif) != 0 :
             for i in range(len(verif)) :
