@@ -27,10 +27,11 @@ def verif_keywords(keywords) :
             badkwd.append(word)
     return badkwd
 
+# Recover arguments for the option entered by user
 def get_args(option) :
-        pos = sys.argv.index(option)
-        args = str(sys.argv[pos + 1]).upper()
-        args = args.split(",")
+        pos = sys.argv.index(option) # Get option's position
+        args = str(sys.argv[pos + 1]).upper() # Convert string's content into capital letters 
+        args = args.split(",") # Split the ','
         return args
 
 try :
