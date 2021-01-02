@@ -4,6 +4,8 @@
 import sys
 import os
 
+default_printing = ["PID","TTY","TIME","CMD"]
+
 # Columns parameters
 settings = [
     ["PID", "{:>5}"],
@@ -64,11 +66,17 @@ def get_pid() :
         if args[0].isdigit() is True : # PID must be an intenger
             pid = args[0] 
             path = "/proc/" + str(pid) # Create the path
+            if int(args[0]) == 0 : # Process ID must be positive
+                print("error : process ID out of range")
+                os._exit(0) # Kill the program
             if isdir(path) is True : # Verify if the folder exists
                 return pid
             else :
-                print("error : process ID out of range")
-                os._exit(0) # Kill the program
+                pid = ""
+                return pid
+        if int(args[0]) < 0 :
+            print("error : process ID out of range")
+            os._exit(0) # Kill the program
         else :
             print("error: process ID list syntax error")
             os._exit(0) # Kill the program
@@ -90,23 +98,24 @@ def print_clmn_names(args) :
 
 # Display the rest of the table
 def print_table(args) :
-    for word in args :
-        template = generate_template(word)
-        if word == "PID" :
-            print(template.format(pid), end = " ")
-        if word == "PPID" :
-            print(template.format(get_ppid(pid)), end = " ")
-        if word == "CMD" :
-            print(template.format(""), end = " ")
-        if word == "TTY" :
-            print(template.format(""), end = " ")
-        if word == "TIME" :
-            print(template.format(""), end = " ")
+    if pid != "" :
+        for word in args :
+            template = generate_template(word)
+            if word == "PID" :
+                print(template.format(pid), end = " ")
+            if word == "PPID" :
+                print(template.format(get_ppid(pid)), end = " ")
+            if word == "CMD" :
+                print(template.format(""), end = " ")
+            if word == "TTY" :
+                print(template.format(""), end = " ")
+            if word == "TIME" :
+                print(template.format(""), end = " ")
 
 try :
     # Default printing if no argments were given by user
     if len(sys.argv) <= 2 :
-        clmn_names = ["PID","TTY","TIME","CMD"]
+        clmn_names = default_printing
     else :
         # Try to get the column(s) name(s)
         clmn_names = get_clmn_names()
@@ -115,16 +124,18 @@ try :
     pid = get_pid()
 
     if pid is not None :
-        if "PID" not in clmn_names :
-            clmn_names.append("PID")
+        if len(clmn_names) == 0 :
+            clmn_names = default_printing
         
     else :
         pid = 1
     
     print_clmn_names(clmn_names)
-    print()
+    if pid != "" :
+        print()
     print_table(clmn_names)
     print()
+
 
 # Print error message if command not used properly
 except ValueError :
