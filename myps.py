@@ -66,7 +66,8 @@ def get_pid() :
         if args[0].isdigit() is True : # PID must be an intenger
             pid = args[0] 
             path = "/proc/" + str(pid) # Create the path
-            if int(args[0]) == 0 : # Process ID must be positive
+            if int(args[0]) == 0 or int(args[0]) > 4194304 : # Process ID must be positive 
+                                                             # NOTE : cf. /proc/sys/kernel/pid_max : Maximum value for PID is 4194304
                 print("error : process ID out of range")
                 os._exit(0) # Kill the program
             if isdir(path) is True : # Verify if the folder exists
@@ -98,7 +99,7 @@ def print_clmn_names(args) :
 
 # Display the rest of the table
 def print_table(args) :
-    if pid != "" :
+    if pid != "" : # If PID does not exists, only prints columns names
         for word in args :
             template = generate_template(word)
             if word == "PID" :
@@ -131,7 +132,7 @@ try :
         pid = 1
     
     print_clmn_names(clmn_names)
-    if pid != "" :
+    if pid != "" : # If PID does not exists, only prints columns names
         print()
     print_table(clmn_names)
     print()
