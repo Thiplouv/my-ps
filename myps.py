@@ -126,29 +126,6 @@ try :
     print_table(clmn_names)
     print()
 
-
-    # Format option
-    #if "-o" in sys.argv and "-p" not in sys.argv :
-    #    # Get -o arguments
-    #    args = get_args("-o")
-    #    verif = verif_keywords(args)
-    #    if len(verif) != 0 :
-    #        for i in range(len(verif)) :
-    #            print("ps: {:s}: keyword not found".format(verif[i]))
-    #        print("ps: no valid keywords; valid keywords:\npid ppid cmd command tty time")
-    #    else :
-    #        print_clmn_names(args)
-    #        print()
-    #        print_table(args)
-
-    # List_PID option
-    #if "-p" in sys.argv :
-    #    # Get -p arguments
-    #    args = get_args("-p")
-    #    #pid = get_pid(args)
-    #    print_clmn_names("PID")
-    #    print()
-    #    print_table(args)
 # Print error message if command not used properly
 except ValueError :
     print("Usage: ./myps.py options flag [arguments]")
