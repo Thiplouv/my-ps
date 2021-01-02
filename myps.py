@@ -49,8 +49,8 @@ def get_clmn_names() :
         verif = verif_keywords(clmn_names) # Verify the keywords
         if len(verif) != 0 :
             for i in range(len(verif)) :
-                print("ps: {:s}: keyword not found".format(verif[i]))
-            print("ps: no valid keywords; valid keywords:\npid ppid cmd command tty time")
+                print("error: unknown user-defined format specifier \"{:s}\"".format(verif[i]))
+            print_usage()
             os._exit(0) # Kill the program
         else :
             return clmn_names
@@ -69,6 +69,7 @@ def get_pid() :
             if int(args[0]) == 0 or int(args[0]) > 4194304 : # Process ID must be positive 
                                                              # NOTE : cf. /proc/sys/kernel/pid_max : Maximum value for PID is 4194304
                 print("error : process ID out of range")
+                print_usage()
                 os._exit(0) # Kill the program
             if isdir(path) is True : # Verify if the folder exists
                 return pid
@@ -77,9 +78,11 @@ def get_pid() :
                 return pid
         if int(args[0]) < 0 :
             print("error : process ID out of range")
+            print_usage()
             os._exit(0) # Kill the program
         else :
             print("error: process ID list syntax error")
+            print_usage()
             os._exit(0) # Kill the program
 
 # Recover the Parent Process Identifier
@@ -122,6 +125,15 @@ def isitlast(args, a) :
         return True
     else :
         return False
+
+def print_usage() :
+    print()
+    print("Usage:")
+    print(" ps [options]\n")
+    print(" Try 'ps --help <simple|list|output|threads|misc|all>'")
+    print("  or 'ps --help <s|l|o|t|m|a>'")
+    print(" for additional help text.\n")
+    print("For more details see ps(1).")
 
 try :
     # Default printing if no argments were given by user
