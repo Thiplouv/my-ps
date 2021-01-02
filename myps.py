@@ -113,6 +113,16 @@ def print_table(args) :
             if word == "TIME" :
                 print(template.format(""), end = " ")
 
+# Check if the imputed arg is the last in the list
+def isitlast(args, a) :
+    for word in args :
+        if word == args[len(args)-1] :
+            last = word
+    if a == last :
+        return True
+    else :
+        return False
+
 try :
     # Default printing if no argments were given by user
     if len(sys.argv) <= 2 :
