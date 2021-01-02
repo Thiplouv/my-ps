@@ -16,26 +16,26 @@ settings = [
     ["TIME", "{:>8}"]
 ]
 
+# Recover arguments for the option entered by user
+def get_args(option) :
+        pos = sys.argv.index(option) # Get option's position
+        args = str(sys.argv[pos + 1]) # Convert string's content into capital letters 
+        args = args.split(",") # Split the ','
+        return args
+
 # Generate column padding template
 def generate_template(column_name):
     for i in range(len(settings)) :
-        if settings[i][0] == column_name :
+        if settings[i][0] == column_name.upper() :
             return(settings[i][1])
 
 # Verify presence of keyword in settings
 def verif_keywords(keywords) :
     badkwd = []
     for word in keywords :
-        if all(word != settings[i][0] for i in range(len(settings))) is True :
+        if all(word.upper() != settings[i][0] for i in range(len(settings))) is True :
             badkwd.append(word)
     return badkwd
-
-# Recover arguments for the option entered by user
-def get_args(option) :
-        pos = sys.argv.index(option) # Get option's position
-        args = str(sys.argv[pos + 1]).upper() # Convert string's content into capital letters 
-        args = args.split(",") # Split the ','
-        return args
 
 # Verify if the dirrectory exists
 def isdir(path) :
@@ -98,12 +98,13 @@ def get_ppid(pid) :
 def print_clmn_names(args) :
     for word in args :
         template = generate_template(word)
-        print(template.format(word), end = " ")
+        print(template.format(word.upper()), end = " ")
 
 # Display the rest of the table
 def print_table(args) :
     if pid != "" : # If PID does not exists, only prints columns names
         for word in args :
+            word = word.upper()
             template = generate_template(word)
             if word == "PID" :
                 print(template.format(pid), end = " ")
