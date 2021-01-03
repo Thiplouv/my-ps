@@ -4,9 +4,10 @@
 import sys
 import os
 
+# Default printed template
 default_printing = ["PID","TTY","TIME","CMD"]
 
-# Columns parameters
+# Columns formatting parameters
 settings = [
     ["PID", "{:>5}"],
     ["PPID", "{:>5}"],
@@ -94,6 +95,27 @@ def get_ppid(pid) :
     ppid = int(content[3]) # cf. procfs manual page : PPID is the 4th element of stat file
     return ppid
 
+# Recover the complete command line for the process ID. (cf. procfs manual)
+def get_cmdline(pid) :
+    path = '/proc/' + str(pid) + '/cmdline' # Create the path
+    with open(path, "r") as cmdline : # Open the file and read it
+        content = cmdline.read()
+    content = content.split("\0") # cf. procfs manual : "The command-line arguments appear in this file 
+#                                                         as a set of strings separated by null bytes ('\0')"
+    content.pop() # Remove last elem of the list (empty elem due to final '\00')
+    command = ""
+    command = " ".join(content) # Create the final string for printing
+    return command
+
+# Recover the process's comm value—that is, the command name associated with the process. (cf. procfs manual)
+def get_comm(pid) :
+    path = '/proc/' + str(pid) + '/comm' # Create the path
+    with open(path, "r") as comm_file : # Open the file and read it
+        content = comm_file.read()
+        content = content.split() # This destroys the .read()'s line feed
+        comm = content[0]
+        return comm
+
 # Display the columns names line 
 def print_clmn_names(args) :
     for word in args :
@@ -127,6 +149,7 @@ def isitlast(args, a) :
     else :
         return False
 
+# Shortcut function to print the usage help message from the official ps tool
 def print_usage() :
     print("\nUsage:")
     print(" ps [options]\n")
