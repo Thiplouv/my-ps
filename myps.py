@@ -13,6 +13,7 @@ settings = [
     ["PPID", "{:>5}"],
     ["CMD", "{:<27}"],
     ["COMMAND", "{:<27}"],
+    ["COMM", "{:<15}"],
     ["TTY", "{:<8}"],
     ["TIME", "{:>8}"]
 ]
@@ -37,6 +38,45 @@ def verif_keywords(keywords) :
         if all(word.upper() != settings[i][0] for i in range(len(settings))) is True :
             badkwd.append(word)
     return badkwd
+
+# Function to adapt column width if argument width is longer than column width (bug fix)
+def verify_width(word) :
+    template = generate_template(word) # Read the original template
+    new_template = ""
+    width = ""
+    new_width = ""
+    c = 0 # Counter for not adding new width 2x
+    template = list(template) # Convert string to list
+
+    # Export the original width from the original template
+    for elem in template :
+        if elem.isdigit() is True :
+            width += elem
+
+    # Adaptive argument width recognition (due to != files locations)
+    if word == "CMD" or word == "COMMAND" or word == "ARGS" :
+        if int(width) < len(get_cmdline(pid)) : # Compare the two widths and export the biggest one
+            new_width = len(get_cmdline(pid))
+        else : new_width = width
+    if word == "COMM" :
+        if int(width) < len(get_comm(pid)) : # Compare the two widths and export the biggest one
+            new_width = len(get_comm(pid))
+        else : new_width = width
+    if word == "PID" or word == "PPID": # Keep original width for pid,ppid,...
+        new_width = width
+
+    # Generate new template with new width inside
+    for elem in template :
+        if elem.isdigit() is True :
+            if c == 1 : # # Verify counter for not adding new width 2x
+                continue
+            else :
+                new_template += str(new_width) # Add new width
+                c +=1 # Implements counter
+        else :
+            new_template += elem # Add rest of the template
+
+    return new_template
 
 # Verify if the dirrectory exists
 def isdir(path) :
@@ -119,7 +159,7 @@ def get_comm(pid) :
 # Display the columns names line 
 def print_clmn_names(args) :
     for word in args :
-        template = generate_template(word)
+        template = verify_width(word.upper())
         print(template.format(word.upper()), end = " ")
 
 # Display the rest of the table
@@ -127,13 +167,15 @@ def print_table(args) :
     if pid != "" : # If PID does not exists, only prints columns names
         for word in args :
             word = word.upper()
-            template = generate_template(word)
+            template = verify_width(word.upper())
             if word == "PID" :
                 print(template.format(pid), end = " ")
             if word == "PPID" :
                 print(template.format(get_ppid(pid)), end = " ")
-            if word == "CMD" :
-                print(template.format(""), end = " ")
+            if word == "CMD" or word == "COMMAND" or word == "ARGS" :
+                print(template.format(get_cmdline(pid)), end = " ")
+            if word == "COMM" :
+                print(template.format(get_comm(pid)), end = " ")
             if word == "TTY" :
                 print(template.format(""), end = " ")
             if word == "TIME" :
