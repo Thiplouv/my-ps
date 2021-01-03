@@ -11,6 +11,6 @@ Here is the man page of ps, in french because my system is configured in la lang
 
 My name is Thibault Plouviez. I am a 18 years old computer science student, based in Paris (France).
 
-I am passionated about Linux for a lot of time, and I always want to learn more. 
+I have a passion for Linux for a lot of time, and I always want to learn more. 
 
 I do think digging into kernel and /proc/ filesystem will be very fun !
