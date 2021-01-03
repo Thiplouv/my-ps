@@ -9,13 +9,14 @@ default_printing = ["PID","TTY","TIME","CMD"]
 
 # Columns formatting parameters
 settings = [
-    ["PID", "{:>5}"],
-    ["PPID", "{:>5}"],
-    ["CMD", "{:<27}"],
-    ["COMMAND", "{:<27}"],
-    ["COMM", "{:<15}"],
-    ["TTY", "{:<8}"],
-    ["TIME", "{:>8}"]
+#     code       header      format
+    ["pid",     "PID",      "{:>5}"],
+    ["ppid",    "PPID",     "{:>5}"],
+    ["cmd",     "CMD",      "{:<27}"],
+    ["command", "COMMAND",  "{:<27}"],
+    ["comm",    "COMM",     "{:<15}"], # NOTE : comm argument will have "COMMAND" header, but it is applied later.
+    ["tname",   "TTY",      "{:<8}"],
+    ["time",    "TIME",     "{:>8}"]
 ]
 
 # Recover arguments for the option entered by user
@@ -28,24 +29,21 @@ def get_args(option) :
 # Generate column padding template
 def generate_template(column_name):
     for i in range(len(settings)) :
-        if settings[i][0] == column_name.upper() :
-            return(settings[i][1])
+        if settings[i][0] == column_name.lower() :
+            return(settings[i][2])
 
 # Verify presence of keyword in settings
 def verif_keywords(keywords) :
     badkwd = []
     for word in keywords :
-        if all(word.upper() != settings[i][0] for i in range(len(settings))) is True :
+        if all(word.lower() != settings[i][0] for i in range(len(settings))) is True :
             badkwd.append(word)
     return badkwd
 
-# Function to adapt column width if argument width is longer than column width (bug fix)
+# Function to truncate the printed string if arguments width is longer than column width
 def verify_width(word) :
     template = generate_template(word) # Read the original template
-    new_template = ""
     width = ""
-    new_width = ""
-    c = 0 # Counter for not adding new width 2x
     template = list(template) # Convert string to list
 
     # Export the original width from the original template
@@ -55,28 +53,14 @@ def verify_width(word) :
 
     # Adaptive argument width recognition (due to != files locations)
     if word == "CMD" or word == "COMMAND" or word == "ARGS" :
-        if int(width) < len(get_cmdline(pid)) : # Compare the two widths and export the biggest one
-            new_width = len(get_cmdline(pid))
-        else : new_width = width
+        data = get_cmdline(pid)
     if word == "COMM" :
-        if int(width) < len(get_comm(pid)) : # Compare the two widths and export the biggest one
-            new_width = len(get_comm(pid))
-        else : new_width = width
-    if word == "PID" or word == "PPID": # Keep original width for pid,ppid,...
-        new_width = width
+        data = get_comm(pid)
 
-    # Generate new template with new width inside
-    for elem in template :
-        if elem.isdigit() is True :
-            if c == 1 : # # Verify counter for not adding new width 2x
-                continue
-            else :
-                new_template += str(new_width) # Add new width
-                c +=1 # Implements counter
-        else :
-            new_template += elem # Add rest of the template
-
-    return new_template
+    if len(data) > int(width) : # Compare the two widths and truncate argument if needed the lowest one
+        data = data[:int(width)]
+    
+    return data
 
 # Verify if the dirrectory exists
 def isdir(path) :
@@ -85,18 +69,22 @@ def isdir(path) :
 
 # Recover column(s) name(s)
 def get_clmn_names() :
+    clmn_names = []
     if "-o" in sys.argv :
-        clmn_names = get_args("-o") # Recover args for '-o' option
-        verif = verif_keywords(clmn_names) # Verify the keywords
+        args = get_args("-o") # Recover args for '-o' option
+        verif = verif_keywords(args) # Verify the keywords
         if len(verif) != 0 :
             for i in range(len(verif)) :
                 print("error: unknown user-defined format specifier \"{:s}\"".format(verif[i]))
             print_usage()
             os._exit(0) # Kill the program
         else :
+            for word in args :
+                for i in range(len(settings)) :
+                    if settings[i][0] == word.lower() :
+                        clmn_names.append(settings[i][1])
             return clmn_names
     else :
-        clmn_names = []
         return clmn_names
 
 # Recover the Process Identifier
@@ -159,23 +147,29 @@ def get_comm(pid) :
 # Display the columns names line 
 def print_clmn_names(args) :
     for word in args :
-        template = verify_width(word.upper())
-        print(template.format(word.upper()), end = " ")
+        if word == "COMM" :
+            template = generate_template(word.upper())
+            print(template.format("COMMAND"), end = " ")
+        else :
+            template = generate_template(word.upper())
+            print(template.format(word.upper()), end = " ")
 
 # Display the rest of the table
 def print_table(args) :
     if pid != "" : # If PID does not exists, only prints columns names
         for word in args :
             word = word.upper()
-            template = verify_width(word.upper())
+            template = generate_template(word.upper())
             if word == "PID" :
                 print(template.format(pid), end = " ")
             if word == "PPID" :
                 print(template.format(get_ppid(pid)), end = " ")
             if word == "CMD" or word == "COMMAND" or word == "ARGS" :
-                print(template.format(get_cmdline(pid)), end = " ")
+                data = verify_width(word)
+                print(template.format(data), end = " ")
             if word == "COMM" :
-                print(template.format(get_comm(pid)), end = " ")
+                data = verify_width(word)
+                print(template.format(data), end = " ")
             if word == "TTY" :
                 print(template.format(""), end = " ")
             if word == "TIME" :
