@@ -76,11 +76,11 @@ def get_pid() :
             else :
                 pid = ""
                 return pid
-        if int(args[0]) < 0 :
+        if int(args[0]) < 0 : # Process ID must be positive
             print("error : process ID out of range")
             print_usage()
             os._exit(0) # Kill the program
-        else :
+        else : # Process ID must be an integer
             print("error: process ID list syntax error")
             print_usage()
             os._exit(0) # Kill the program
@@ -128,8 +128,7 @@ def isitlast(args, a) :
         return False
 
 def print_usage() :
-    print()
-    print("Usage:")
+    print("\nUsage:")
     print(" ps [options]\n")
     print(" Try 'ps --help <simple|list|output|threads|misc|all>'")
     print("  or 'ps --help <s|l|o|t|m|a>'")
