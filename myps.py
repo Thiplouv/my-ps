@@ -31,6 +31,8 @@ def generate_template(column_name):
     for i in range(len(settings)) :
         if settings[i][0] == column_name.lower() :
             return(settings[i][2])
+        if settings[i][1] == column_name.upper() :
+            return(settings[i][2])
 
 # Verify presence of keyword in settings
 def verif_keywords(keywords) :
@@ -149,6 +151,17 @@ def get_comm(pid) :
         comm = content[0]
         return comm
 
+# Recovers the TTY if it is not permissions restricted
+def get_tname(pid) :
+    path = '/proc/' + str(pid) + '/fd/0' # Create the path
+    try :
+        tname = os.readlink(path) # Processes can have tty's symbolics links in fd folder
+        if "/dev/" in tname :
+            tname = tname.removeprefix("/dev/")
+    except PermissionError : # If the symbolic link is not readable, ps prints "?"
+        tname = "?"
+    return tname
+
 # Display the columns names line 
 def print_clmn_names(args) :
     for word in args :
@@ -176,7 +189,7 @@ def print_table(args) :
                 data = verify_width(word)
                 print(template.format(data), end = " ")
             if word == "TTY" :
-                print(template.format(""), end = " ")
+                print(template.format(get_tname(pid)), end = " ")
             if word == "TIME" :
                 print(template.format(""), end = " ")
 
