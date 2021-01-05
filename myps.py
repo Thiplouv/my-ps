@@ -9,14 +9,15 @@ default_printing = ["PID","TTY","TIME","CMD"]
 
 # Columns formatting parameters
 settings = [
-#     code       header      format
-    ["pid",     "PID",      "{:>5}"],
-    ["ppid",    "PPID",     "{:>5}"],
-    ["cmd",     "CMD",      "{:<27}"],
-    ["command", "COMMAND",  "{:<27}"],
-    ["comm",    "COMM",     "{:<15}"], # NOTE : comm argument will have "COMMAND" header, but it is applied later.
-    ["tname",   "TTY",      "{:<8}"],
-    ["time",    "TIME",     "{:>8}"]
+#     code          header      format
+    ["pid",         "PID",      "{:>5}"],
+    ["ppid",        "PPID",     "{:>5}"],
+    ["cmd",         "CMD",      "{:<27}"],
+    ["command",     "COMMAND",  "{:<27}"],
+    ["comm",        "COMM",     "{:<15}"], # NOTE : comm argument will have "COMMAND" header, but it is applied later.
+    ["tname",       "TTY",      "{:<8}"],
+    ["cputime",     "TIME",     "{:>8}"],
+    ["cputimes",    "TIMES",    "{:>8}"]   # NOTE : cputimes argument will have "TIME" header, but it is applied later.
 ]
 
 # Recover arguments for the option entered by user
@@ -162,12 +163,50 @@ def get_tname(pid) :
         tname = "?"
     return tname
 
+# Recover cumulative CPU time in "[DD-]hh:mm:ss" format
+def get_cputime(pid) :
+    path = '/proc/' + str(pid) + '/stat' # Create the path
+    hwc_freq = os.sysconf("SC_CLK_TCK") # Recover the Clock Ticks Speed from the system
+    with open(path, "r") as stat : # Opens it (no close needed due to with statement)
+        content = stat.read() # Read the content of the file
+    content = content.split()
+    utime = int(content[13]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : utime
+    stime = int(content[14]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : stime
+    t = int(utime + stime) # Complete time in seconds
+#   NOTE : Job is not done yet :
+    dd = int(t / (60 * 60 * 24)) # Days
+    tmp1 = t - (dd * 24 * 60 * 60)
+    hh = int(tmp1 / (60 * 60)) # Hours
+    tmp2 = tmp1 - (hh * 60 * 60)
+    mm = int(tmp2 / 60) # Minutes
+    ss = tmp2 - (mm * 60) # Seconds
+    if dd != 0 : # Decide if there is need to print days or not
+        time = "{:02d}".format(dd) + ":" + "{:02d}".format(hh) + ":" + "{:02d}".format(mm) + ":" + "{:02d}".format(ss)
+    else :
+        time = "{:02d}".format(hh) + ":" + "{:02d}".format(mm) + ":" + "{:02d}".format(ss)
+    return time
+
+# Recover cumulative CPU time in seconds
+def get_cputimes(pid) : 
+    path = '/proc/' + str(pid) + '/stat' # Create the path
+    hwc_freq = os.sysconf("SC_CLK_TCK") # Recover the Clock Ticks Speed from the system
+    with open(path, "r") as stat : # Opens it (no close needed due to with statement)
+        content = stat.read() # Read the content of the file
+    content = content.split()
+    utime = int(content[13]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : utime
+    stime = int(content[14]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : stime
+    t = int(utime + stime) # Complete time in seconds
+    return t
+
 # Display the columns names line 
 def print_clmn_names(args) :
     for word in args :
         if word == "COMM" :
             template = generate_template(word.upper())
             print(template.format("COMMAND"), end = " ")
+        if word == "TIMES" :
+            template = generate_template(word.upper())
+            print(template.format("TIME"), end = " ")
         else :
             template = generate_template(word.upper())
             print(template.format(word.upper()), end = " ")
@@ -191,7 +230,9 @@ def print_table(args) :
             if word == "TTY" :
                 print(template.format(get_tname(pid)), end = " ")
             if word == "TIME" :
-                print(template.format(""), end = " ")
+                print(template.format(get_cputime(pid)), end = " ")
+            if word == "TIMES" :
+                print(template.format(get_cputimes(pid)), end = " ")
 
 # Check if the imputed arg is the last in the list
 def isitlast(args, a) :
