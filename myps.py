@@ -159,20 +159,15 @@ def get_tname(pid) :
         tname = os.readlink(path) # Processes can have tty's symbolics links in fd folder
         if "/dev/" in tname :
             tname = tname.removeprefix("/dev/")
+        if tname == "null" :
+            tname = "?"
     except PermissionError : # If the symbolic link is not readable, ps prints "?"
         tname = "?"
     return tname
 
 # Recover cumulative CPU time in "[DD-]hh:mm:ss" format
 def get_cputime(pid) :
-    path = '/proc/' + str(pid) + '/stat' # Create the path
-    hwc_freq = os.sysconf("SC_CLK_TCK") # Recover the Clock Ticks Speed from the system
-    with open(path, "r") as stat : # Opens it (no close needed due to with statement)
-        content = stat.read() # Read the content of the file
-    content = content.split()
-    utime = int(content[13]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : utime
-    stime = int(content[14]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : stime
-    t = int(utime + stime) # Complete time in seconds
+    t = get_cputimes(pid)
 #   NOTE : Job is not done yet :
     dd = int(t / (60 * 60 * 24)) # Days
     tmp1 = t - (dd * 24 * 60 * 60)
