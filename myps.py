@@ -84,6 +84,10 @@ def get_clmn_names() :
                     if settings[i][0] == word.lower() :
                         clmn_names.append(settings[i][1])
             return clmn_names
+#   NOTE : This section need to be remooved when TTY and TIME functions will be supported
+    if "-o" not in sys.argv and "-p" in sys.argv :
+        clmn_names.append("PID")
+        return clmn_names
     else :
         return clmn_names
 
@@ -91,28 +95,27 @@ def get_clmn_names() :
 def get_pid() :
     if "-p" in sys.argv :
         args = get_args("-p") # Recover args for '-p' option
-        # NOTE : Only one PID is actually supported, so the pid is the first element of args
-        if args[0].isdigit() is True : # PID must be an intenger
-            pid = args[0] 
-            path = "/proc/" + str(pid) # Create the path
-            if int(args[0]) == 0 or int(args[0]) > 4194304 : # Process ID must be positive 
-                                                             # NOTE : cf. /proc/sys/kernel/pid_max : Maximum value for PID is 4194304
-                print("error : process ID out of range")
+        list_pids = [] # Create the list of processes identifiers returned
+        for elem in args : # For each pid in the list gived by user
+            if elem.lstrip("-").isdigit() is True : # PID must be an alphanumeric character
+#                                                     NOTE : use of lstrip() is mandatory, otherwise isdigit() consider negatives number as non digit due to "-"
+                if int(elem) <= 0 or int(elem) > 4194304 : # Process ID must be between 1 and 4194304
+#                                                            NOTE : cf. /proc/sys/kernel/pid_max : Maximum value for PID is 4194304
+                    print("error : process ID out of range")
+                    print_usage()
+                    os._exit(0) # Kill the program
+
+                else :
+                    path = "/proc/" + str(elem) # Create the path
+                    if isdir(path) is True : # Verify if the folder exists
+                        list_pids.append(elem) # Add the PID to the list
+
+            else : # Process ID must be an integer
+                print("error: process ID list syntax error")
                 print_usage()
                 os._exit(0) # Kill the program
-            if isdir(path) is True : # Verify if the folder exists
-                return pid
-            else :
-                pid = ""
-                return pid
-        if int(args[0]) < 0 : # Process ID must be positive
-            print("error : process ID out of range")
-            print_usage()
-            os._exit(0) # Kill the program
-        else : # Process ID must be an integer
-            print("error: process ID list syntax error")
-            print_usage()
-            os._exit(0) # Kill the program
+
+        return list_pids
 
 # Recover the Parent Process Identifier
 def get_ppid(pid) :
@@ -133,6 +136,8 @@ def get_cmdline(pid) :
     content.pop() # Remove last elem of the list (empty elem due to final '\00')
     command = ""
     command = " ".join(content) # Create the final string for printing
+    if len(command) == 0 :
+        command = "[" + get_comm(pid) + "]"
     return command
 
 # Recover the process's comm value—that is, the command name associated with the process. (cf. procfs manual)
@@ -202,20 +207,22 @@ try :
         # Try to get the column(s) name(s)
         clmn_names = get_clmn_names()
 
-    # Try to get the PID
-    pid = get_pid()
+    list_pids = get_pid()
 
-    if pid is not None :
-        if len(clmn_names) == 0 :
-            clmn_names = default_printing
-        
-    else :
-        pid = 1
-    
     print_clmn_names(clmn_names)
-    if pid != "" : # If PID does not exists, only prints columns names
-        print()
-    print_table(clmn_names)
+
+    for pid in list_pids :
+        
+        if pid is not None :
+            if len(clmn_names) == 0 :
+                clmn_names = default_printing
+            
+        else :
+            pid = 1
+        
+        if pid != "" : # If PID does not exists, only prints columns names
+            print()
+        print_table(clmn_names)
     print()
 
 
