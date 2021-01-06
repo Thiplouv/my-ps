@@ -5,7 +5,7 @@ import sys
 import os
 
 # Default printed template
-default_printing = ["PID","TTY","TIME","CMD"]
+default_columns = ["PID","TTY","TIME","CMD"]
 
 # Columns formatting parameters
 settings = [
@@ -65,6 +65,19 @@ def verify_width(word) :
     
     return data
 
+# Verify if the comm (The filename of the executable, in parentheses) contains spaces, and removes it
+def verify_commstat(content) :
+    if str(content[2]).startswith("(") and str(content[2]).endswith(")") : # If comm is a single element, don't touch anything !
+        return content
+    else :
+        for i in range(len(content)) :
+            if content[i].startswith("(") :
+                bgn = i # Begin for the join
+            if content[i].endswith(")") :
+                end = i+1 # End for the join (+1 for no actual reason i'm tired it's 01:00 AM)
+        content[bgn : end] = ["_".join(content[bgn : end])]
+        return content
+
 # Verify if the dirrectory exists
 def isdir(path) :
     isdir = os.path.isdir(path)
@@ -87,38 +100,48 @@ def get_clmn_names() :
                     if settings[i][0] == word.lower() :
                         clmn_names.append(settings[i][1])
             return clmn_names
-#   NOTE : This section need to be remooved when TTY and TIME functions will be supported
-    if "-o" not in sys.argv and "-p" in sys.argv :
-        clmn_names.append("PID")
-        return clmn_names
-    else :
-        return clmn_names
+    else : 
+        clmn_names = default_columns
 
 # Recover the Process Identifier
-def get_pid() :
-    if "-p" in sys.argv :
-        args = get_args("-p") # Recover args for '-p' option
-        list_pids = [] # Create the list of processes identifiers returned
-        for elem in args : # For each pid in the list gived by user
-            if elem.lstrip("-").isdigit() is True : # PID must be an alphanumeric character
+def get_ud_pids() :
+    args = get_args("-p") # Recover args for '-p' option
+    list_pids = [] # Create the list of processes identifiers returned
+    for elem in args : # For each pid in the list gived by user
+        if elem.lstrip("-").isdigit() is True : # PID must be an alphanumeric character
 #                                                     NOTE : use of lstrip() is mandatory, otherwise isdigit() consider negatives number as non digit due to "-"
-                if int(elem) <= 0 or int(elem) > 4194304 : # Process ID must be between 1 and 4194304
+            if int(elem) <= 0 or int(elem) > 4194304 : # Process ID must be between 1 and 4194304
 #                                                            NOTE : cf. /proc/sys/kernel/pid_max : Maximum value for PID is 4194304
-                    print("error : process ID out of range")
-                    print_usage()
-                    os._exit(0) # Kill the program
-
-                else :
-                    path = "/proc/" + str(elem) # Create the path
-                    if isdir(path) is True : # Verify if the folder exists
-                        list_pids.append(elem) # Add the PID to the list
-
-            else : # Process ID must be an integer
-                print("error: process ID list syntax error")
+                print("error : process ID out of range")
                 print_usage()
                 os._exit(0) # Kill the program
 
-        return list_pids
+            else :
+                path = "/proc/" + str(elem) # Create the path
+                if isdir(path) is True : # Verify if the folder exists
+                    list_pids.append(elem) # Add the PID to the list
+
+        else : # Process ID must be an integer
+            print("error: process ID list syntax error")
+            print_usage()
+            os._exit(0) # Kill the program
+
+    return list_pids
+
+# Recover all current PIDs in /proc/
+def get_all_pids() :
+    list_pids = []
+    with os.scandir("/proc/") as content : # NOTE : Combo between with() statement and scandir() to ensure that closing is fine
+        for entry in content : # For each element in /proc/
+            if entry.is_dir() is True : # Recover the files
+                if entry.name.isdigit() is True : # Whose names are alphanumeric characters
+                    list_pids.append(entry.name) # Add the PID to the list
+    return list_pids
+
+# Recover current terminal related processes
+def get_cterm_pids() :
+    list_pids = []
+    return list_pids
 
 # Recover the Parent Process Identifier
 def get_ppid(pid) :
@@ -126,6 +149,7 @@ def get_ppid(pid) :
     with open(path, "r") as stat : # Opens it (no close needed due to with statement)
         content = stat.read() # Read the content of the file
     content = content.split()
+    content = verify_commstat(content) # Removes accidental spaces in comm (/proc/[pid]/stat[2nd elemnt])
     ppid = int(content[3]) # cf. procfs manual page : PPID is the 4th element of stat file
     return ppid
 
@@ -188,6 +212,7 @@ def get_cputimes(pid) :
     with open(path, "r") as stat : # Opens it (no close needed due to with statement)
         content = stat.read() # Read the content of the file
     content = content.split()
+    content = verify_commstat(content)
     utime = int(content[13]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : utime
     stime = int(content[14]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : stime
     t = int(utime + stime) # Complete time in seconds
@@ -199,12 +224,13 @@ def print_clmn_names(args) :
         if word == "COMM" :
             template = generate_template(word.upper())
             print(template.format("COMMAND"), end = " ")
-        if word == "TIMES" :
-            template = generate_template(word.upper())
-            print(template.format("TIME"), end = " ")
         else :
-            template = generate_template(word.upper())
-            print(template.format(word.upper()), end = " ")
+            if word == "TIMES" :
+                template = generate_template(word.upper())
+                print(template.format("TIME"), end = " ")
+            else :
+                template = generate_template(word.upper())
+                print(template.format(word.upper()), end = " ")
 
 # Display the rest of the table
 def print_table(args) :
@@ -249,14 +275,17 @@ def print_usage() :
     print("For more details see ps(1).")
 
 try :
-    # Default printing if no argments were given by user
-    if len(sys.argv) <= 2 :
-        clmn_names = default_printing
-    else :
-        # Try to get the column(s) name(s)
+    if len(sys.argv) < 2 :
+        list_pids = get_cterm_pids()
         clmn_names = get_clmn_names()
 
-    list_pids = get_pid()
+    if "-p" in sys.argv :
+        list_pids = get_ud_pids()
+        clmn_names = get_clmn_names()
+
+    if "-e" in sys.argv :
+        list_pids = get_all_pids()
+        clmn_names = get_clmn_names()
 
     print_clmn_names(clmn_names)
 
@@ -264,7 +293,7 @@ try :
         
         if pid is not None :
             if len(clmn_names) == 0 :
-                clmn_names = default_printing
+                clmn_names = default_columns
             
         else :
             pid = 1
