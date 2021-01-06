@@ -126,7 +126,10 @@ def get_ud_pids() :
             print("error: process ID list syntax error")
             print_usage()
             os._exit(0) # Kill the program
-
+    
+    list_pids = [int(i) for i in list_pids]
+    list_pids.sort()
+    list_pids = [str(i) for i in list_pids]
     return list_pids
 
 # Recover all current PIDs in /proc/
