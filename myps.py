@@ -66,7 +66,7 @@ def verify_width(word) :
     return data
 
 # Verify if the comm (The filename of the executable, in parentheses) contains spaces, and removes it
-def verify_commstat(content) :
+def verify_comm(content) :
     if str(content[2]).startswith("(") and str(content[2]).endswith(")") : # If comm is a single element, don't touch anything !
         return content
     else :
@@ -74,8 +74,9 @@ def verify_commstat(content) :
             if content[i].startswith("(") :
                 bgn = i # Begin for the join
             if content[i].endswith(")") :
-                end = i+1 # End for the join (+1 for no actual reason i'm tired it's 01:00 AM)
-        content[bgn : end] = ["_".join(content[bgn : end])]
+                end = i+1 # End for the join
+        content[bgn : end] = ["_sep_".join(content[bgn : end])]
+        content[1] = content[1].replace("_sep_", " ") # Custom separator to avoid unwanted char deletion
         return content
 
 # Verify if the dirrectory exists
@@ -149,7 +150,7 @@ def get_ppid(pid) :
     with open(path, "r") as stat : # Opens it (no close needed due to with statement)
         content = stat.read() # Read the content of the file
     content = content.split()
-    content = verify_commstat(content) # Removes accidental spaces in comm (/proc/[pid]/stat[2nd elemnt])
+    content = verify_comm(content) # Removes accidental spaces in comm (/proc/[pid]/stat[2nd elemnt])
     ppid = int(content[3]) # cf. procfs manual page : PPID is the 4th element of stat file
     return ppid
 
@@ -169,11 +170,13 @@ def get_cmdline(pid) :
 
 # Recover the process's comm value—that is, the command name associated with the process. (cf. procfs manual)
 def get_comm(pid) :
-    path = '/proc/' + str(pid) + '/comm' # Create the path
-    with open(path, "r") as comm_file : # Open the file and read it
-        content = comm_file.read()
+    path = '/proc/' + str(pid) + '/stat' # Create the path
+    with open(path, "r") as stat : # Open the file and read it
+        content = stat.read()
         content = content.split() # This destroys the .read()'s line feed
-        comm = content[0]
+        content = verify_comm(content)
+        comm = content[1]
+        comm = comm.replace("(", "").replace(")", "")
         return comm
 
 # Recovers the TTY if it is not permissions restricted
@@ -212,7 +215,7 @@ def get_cputimes(pid) :
     with open(path, "r") as stat : # Opens it (no close needed due to with statement)
         content = stat.read() # Read the content of the file
     content = content.split()
-    content = verify_commstat(content)
+    content = verify_comm(content)
     utime = int(content[13]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : utime
     stime = int(content[14]) / hwc_freq # cf. procfs man page : /proc/[pid]/stat section : stime
     t = int(utime + stime) # Complete time in seconds
