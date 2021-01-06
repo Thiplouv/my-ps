@@ -5,7 +5,7 @@ import sys
 import os
 
 # Default printed template
-default_columns = ["PID","TTY","TIME","CMD"]
+default_columns = ["PID","TTY","TIME","COMM"]
 
 # Columns formatting parameters
 settings = [
@@ -103,6 +103,7 @@ def get_clmn_names() :
             return clmn_names
     else : 
         clmn_names = default_columns
+        return clmn_names
 
 # Recover the Process Identifier
 def get_ud_pids() :
@@ -127,9 +128,7 @@ def get_ud_pids() :
             print_usage()
             os._exit(0) # Kill the program
     
-    list_pids = [int(i) for i in list_pids]
-    list_pids.sort()
-    list_pids = [str(i) for i in list_pids]
+    list_pids = sort_pids(list_pids)
     return list_pids
 
 # Recover all current PIDs in /proc/
@@ -144,7 +143,23 @@ def get_all_pids() :
 
 # Recover current terminal related processes
 def get_cterm_pids() :
-    list_pids = []
+    list_pids = [] # Create final pids list
+    current_pid = os.getpid() # Recover the current process id
+    tty_nr = get_ttynr(current_pid) # Recovers it's tty_nr
+    all_running = get_all_pids() # Recover all running processes ids
+
+    for elem in all_running : # Recover the pids if the tty_nr values are sames
+        if get_ttynr(elem) == tty_nr :
+            list_pids.append(elem)
+
+    list_pids = sort_pids(list_pids)
+    return list_pids
+
+# Sorts PIDs
+def sort_pids(list_pids) :
+    list_pids = [int(i) for i in list_pids] # Converts elements in ints
+    list_pids.sort() # Sort them
+    list_pids = [str(i) for i in list_pids] # Converts sorted elements in strings
     return list_pids
 
 # Recover the Parent Process Identifier
@@ -181,6 +196,16 @@ def get_comm(pid) :
         comm = content[1]
         comm = comm.replace("(", "").replace(")", "")
         return comm
+
+# Recover the tty_nr value that is the controlling terminal of the process
+def get_ttynr(pid) :
+    path = '/proc/' + str(pid) + '/stat' # Create the path
+    with open(path, "r") as stat : # Open the file and read it
+        content = stat.read()
+        content = content.split() # This destroys the .read()'s line feed
+        content = verify_comm(content)
+        tnum = content[6] # Recover tty_nr
+        return tnum
 
 # Recovers the TTY if it is not permissions restricted
 def get_tname(pid) :
@@ -281,28 +306,24 @@ def print_usage() :
     print("For more details see ps(1).")
 
 try :
-    if len(sys.argv) < 2 :
-        list_pids = get_cterm_pids()
-        clmn_names = get_clmn_names()
-
+    # Case where user displays some specifics pids
     if "-p" in sys.argv :
         list_pids = get_ud_pids()
         clmn_names = get_clmn_names()
 
+    # Case where user displays all pids
     if "-e" in sys.argv :
         list_pids = get_all_pids()
+        clmn_names = get_clmn_names()
+
+    # All the other cases
+    else :
+        list_pids = get_cterm_pids()
         clmn_names = get_clmn_names()
 
     print_clmn_names(clmn_names)
 
     for pid in list_pids :
-        
-        if pid is not None :
-            if len(clmn_names) == 0 :
-                clmn_names = default_columns
-            
-        else :
-            pid = 1
         
         if pid != "" : # If PID does not exists, only prints columns names
             print()
