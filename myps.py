@@ -317,7 +317,7 @@ try :
         clmn_names = get_clmn_names()
 
     # All the other cases
-    else :
+    if "-p" not in sys.argv and "-e" not in sys.argv :
         list_pids = get_cterm_pids()
         clmn_names = get_clmn_names()
 
