@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/bin/python3.9
 
 # Import modules
 import sys
